@@ -56,14 +56,14 @@ class ReelsDetector(
         return if (shouldCount) {
             DetectionResult(
                 isReelTransition = true,
-                eventTypeString = typeString,
+                eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
                 reason = "Valid Reel swipe detected (debounced)"
             )
         } else {
             DetectionResult(
                 isReelTransition = false,
-                eventTypeString = typeString,
+                eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
                 reason = "Duplicate / debounced within time window"
             )
