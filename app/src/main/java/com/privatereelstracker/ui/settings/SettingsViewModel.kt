@@ -22,15 +22,26 @@ import java.io.FileOutputStream
 data class SettingsUiState(
     val isExporting: Boolean = false,
     val exportMessage: String? = null,
-    val isDataWiped: Boolean = false
+    val isDataWiped: Boolean = false,
+    val isLockAt100Enabled: Boolean = false
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = (application as PrivateReelsTrackerApp).repository
 
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow(
+        SettingsUiState(
+            isLockAt100Enabled = com.privatereelstracker.util.AppPreferences.isLockEnabled(application)
+        )
+    )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    fun toggleLockAt100(enabled: Boolean) {
+        val context = getApplication<Application>()
+        com.privatereelstracker.util.AppPreferences.setLockEnabled(context, enabled)
+        _uiState.value = _uiState.value.copy(isLockAt100Enabled = enabled)
+    }
 
     fun exportLocalData(onFileReady: (Uri) -> Unit) {
         viewModelScope.launch {

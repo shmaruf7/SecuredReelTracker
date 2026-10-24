@@ -1,9 +1,12 @@
 package com.privatereelstracker.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.privatereelstracker.PrivateReelsTrackerApp
+import com.privatereelstracker.util.AppPreferences
+import com.privatereelstracker.util.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +38,6 @@ class ReelsAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        // Ignore all applications that are not Instagram
         val packageName = event.packageName?.toString() ?: return
         if (packageName != TARGET_PACKAGE) return
 
@@ -47,13 +49,32 @@ class ReelsAccessibilityService : AccessibilityService() {
             val repository = app.repository
 
             repository.incrementReelCount()
+            val todayData = repository.getTodayReels()
+            val currentCount = todayData.reelCount
 
-            // Record non-sensitive diagnostic entry only on counted transitions
+            // Record non-sensitive diagnostic entry
             repository.recordDiagnostic(
                 eventType = result.eventTypeString,
                 details = "${result.structuralDigest} | ${result.reason}",
                 wasIncremented = true
             )
+
+            // Check milestone notifications: 20, 50, 70, 90, 100, 110, 120, 130, 140, 150
+            if (NotificationHelper.MILESTONES.contains(currentCount)) {
+                val isLockEnabled = AppPreferences.isLockEnabled(this@ReelsAccessibilityService)
+                val shouldLock = isLockEnabled && currentCount >= 100
+
+                NotificationHelper.sendMilestoneNotification(
+                    context = this@ReelsAccessibilityService,
+                    count = currentCount,
+                    isLockTriggered = shouldLock
+                )
+
+                // If lock enabled and at or over 100 reels: dismiss Instagram to Home Screen
+                if (shouldLock) {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
+            }
         }
     }
 

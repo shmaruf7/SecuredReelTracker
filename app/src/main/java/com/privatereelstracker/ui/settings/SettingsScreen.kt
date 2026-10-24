@@ -142,6 +142,44 @@ fun SettingsScreen(
             )
         }
 
+        // Reels Control & Limiting
+        Text(text = "Reels Limits & Lock", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(SurfaceCard)
+                .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = "Lock Instagram at 100 Reels",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Automatically minimizes Instagram and sends a stop notification once you reach 100 Reels.",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                }
+                androidx.compose.material3.Switch(
+                    checked = state.isLockAt100Enabled,
+                    onCheckedChange = { viewModel.toggleLockAt100(it) }
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         // System Permissions Management

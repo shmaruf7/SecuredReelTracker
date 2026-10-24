@@ -14,6 +14,7 @@ class PrivateReelsTrackerApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.privatereelstracker.util.NotificationHelper.createNotificationChannel(this)
         database = AppDatabase.getInstance(this)
         repository = ReelRepository(
             reelDao = database.reelDao(),

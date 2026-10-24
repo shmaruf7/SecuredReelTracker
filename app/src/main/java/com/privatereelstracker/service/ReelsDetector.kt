@@ -1,14 +1,14 @@
 package com.privatereelstracker.service
 
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 
 /**
  * Detects Instagram Reels transitions using strictly non-sensitive structural heuristics.
- * NEVER inspects text, messages, passwords, camera/video buffers, or user names.
+ * Differentiates the Reels viewer from the standard Home Feed.
+ * Rejects partial/aborted rubber-band drag gestures (requires a distinct index progression).
  */
 class ReelsDetector(
-    private val duplicateFilter: DuplicateFilter = DuplicateFilter()
+    private val duplicateFilter: DuplicateFilter = DuplicateFilter(debounceWindowMs = 800L)
 ) {
 
     data class DetectionResult(
@@ -17,6 +17,8 @@ class ReelsDetector(
         val structuralDigest: String,
         val reason: String
     )
+
+    private var lastObservedIndex: Int = -1
 
     fun evaluateEvent(event: AccessibilityEvent): DetectionResult {
         val eventType = event.eventType
@@ -31,34 +33,56 @@ class ReelsDetector(
             )
         }
 
-        val itemCount = event.itemCount
+        // On Instagram:
+        // 1. Home Feed uses a vertical multi-child RecyclerView (class contains RecyclerView)
+        // 2. Reels Viewer is a full-screen vertical pager using ViewPager or ViewPager2
+        val isPager = className.contains("ViewPager", ignoreCase = true)
+
         val fromIndex = event.fromIndex
         val toIndex = event.toIndex
-        val structuralDigest = "class=$className;items=$itemCount;idx=$fromIndex-$toIndex"
+        val itemCount = event.itemCount
+        val scrollY = event.scrollY
 
-        val isPagerOrScroll = className.contains("ViewPager", ignoreCase = true) ||
-                className.contains("RecyclerView", ignoreCase = true)
+        val structuralDigest = "class=$className;items=$itemCount;from=$fromIndex;to=$toIndex;scrollY=$scrollY"
 
-        if (!isPagerOrScroll) {
+        // If it's a standard RecyclerView without ViewPager, it is likely the Home Feed, DMs, or Profile grid
+        if (!isPager) {
             return DetectionResult(
                 isReelTransition = false,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Ignored non-feed element"
+                reason = "Ignored: Regular Home Feed / Grid scroll"
             )
         }
 
+        // Issue 2 Fix: Handle dragging up/down without actually changing reel (aborted swipe).
+        // A true full Reel swipe changes the active item index in the ViewPager.
+        val currentIndex = if (fromIndex >= 0) fromIndex else toIndex
+
+        if (currentIndex >= 0 && currentIndex == lastObservedIndex) {
+            return DetectionResult(
+                isReelTransition = false,
+                eventTypeString = "TYPE_VIEW_SCROLLED",
+                structuralDigest = structuralDigest,
+                reason = "Ignored: Partial bounce / drag without changing Reel"
+            )
+        }
+
+        // Debounce filter check
         val shouldCount = duplicateFilter.shouldCount(
             now = System.currentTimeMillis(),
-            contentDigest = structuralDigest
+            contentDigest = "reel_idx_$currentIndex"
         )
 
         return if (shouldCount) {
+            if (currentIndex >= 0) {
+                lastObservedIndex = currentIndex
+            }
             DetectionResult(
                 isReelTransition = true,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Valid Reel swipe detected (debounced)"
+                reason = "Valid distinct Reel transition (Index: $currentIndex)"
             )
         } else {
             DetectionResult(

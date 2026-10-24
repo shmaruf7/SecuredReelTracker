@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Reel clapperboard / film frame outline -->
+    <path
+        android:strokeColor="#6C5CE7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 32,26 L 76,26 A 6,6 0 0,1 82,32 L 82,76 A 6,6 0 0,1 76,82 L 32,82 A 6,6 0 0,1 26,76 L 26,32 A 6,6 0 0,1 32,26 Z" />
+    <!-- Clapper stripes on top -->
+    <path
+        android:strokeColor="#00D2D3"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M 36,26 L 46,38 M 52,26 L 62,38 M 68,26 L 78,38" />
+    <path
+        android:strokeColor="#6C5CE7"
+        android:strokeWidth="3"
+        android:pathData="M 26,38 L 82,38" />
+    <!-- Shield / lock emblem in center signifying Privacy -->
+    <path
+        android:fillColor="#00D2D3"
+        android:pathData="M 54,46 C 45,46 42,50 42,58 C 42,68 54,73 54,73 C 54,73 66,68 66,58 C 66,50 63,46 54,46 Z" />
+    <!-- Lock keyhole cut -->
+    <path
+        android:fillColor="#0B0D13"
+        android:pathData="M 54,54 A 3,3 0 0,0 52,58.8 L 52,64 L 56,64 L 56,58.8 A 3,3 0 0,0 54,54 Z" />
+</vector>
