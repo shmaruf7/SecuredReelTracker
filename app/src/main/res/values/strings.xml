@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Reels Tracker</string>
+    <string name="accessibility_service_description">Strictly counts Reels swipes locally inside Instagram. Never transmits, records, or reads personal messages, keystrokes, or media.</string>
+</resources>
