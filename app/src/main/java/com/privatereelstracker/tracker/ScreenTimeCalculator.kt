@@ -4,23 +4,29 @@ object ScreenTimeCalculator {
 
     /**
      * Estimates Reels-specific viewing duration.
-     * Android does not expose internal app tabs (e.g. DMs vs Feed vs Reels) via UsageStatsManager.
-     * We calculate an estimate based on the average viewing time per detected Reel swipe
-     * bounded by the total foreground time of Instagram.
-     *
-     * @param reelCount Number of detected reels swiped
-     * @param totalInstagramForegroundMs Total time Instagram app was in foreground
-     * @param averageReelDurationMs Average estimated duration spent on a single Reel (e.g., 18s)
+     * Calculates time spent on reels dynamically based on actual reel count and average reel view time.
+     * If total Instagram usage is low (e.g. user just opened IG for 1 minute), estimated time
+     * cannot exceed that total time. If user spent 20 seconds swiping 20 reels, each fast swipe
+     * is ~2-3 seconds, not a static 18 seconds.
      */
-    fun calculateEstimatedReelsTime(
+     fun calculateEstimatedReelsTime(
         reelCount: Int,
         totalInstagramForegroundMs: Long,
-        averageReelDurationMs: Long = 18_000L
+        sessionDurationMs: Long = 0L
     ): Long {
         if (reelCount <= 0 || totalInstagramForegroundMs <= 0L) return 0L
-        val estimatedRaw = reelCount * averageReelDurationMs
-        // Estimated reels time cannot exceed total Instagram foreground time
-        return estimatedRaw.coerceAtMost(totalInstagramForegroundMs)
+
+        // If a specific session duration was recorded, use it
+        if (sessionDurationMs > 0L) {
+            return sessionDurationMs.coerceAtMost(totalInstagramForegroundMs)
+        }
+
+        // Dynamically estimate: when swiping rapidly (many reels in short IG foreground time),
+        // average time per reel is proportional to total IG time / count.
+        val avgTimePerReel = (totalInstagramForegroundMs / reelCount).coerceIn(2_000L, 25_000L)
+        val estimatedTotal = reelCount * avgTimePerReel
+
+        return estimatedTotal.coerceAtMost(totalInstagramForegroundMs)
     }
 
     /**

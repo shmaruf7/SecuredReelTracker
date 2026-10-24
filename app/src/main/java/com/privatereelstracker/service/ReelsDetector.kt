@@ -18,46 +18,33 @@ class ReelsDetector(
         val reason: String
     )
 
-    fun evaluateEvent(event: AccessibilityEvent, rootNode: AccessibilityNodeInfo?): DetectionResult {
+    fun evaluateEvent(event: AccessibilityEvent): DetectionResult {
         val eventType = event.eventType
-        val className = event.className?.toString() ?: "Unknown"
+        val className = event.className?.toString() ?: ""
 
-        val typeString = when (eventType) {
-            AccessibilityEvent.TYPE_VIEW_SCROLLED -> "TYPE_VIEW_SCROLLED"
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> "TYPE_WINDOW_CONTENT_CHANGED"
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> "TYPE_WINDOW_STATE_CHANGED"
-            else -> "EVENT_$eventType"
-        }
-
-        // We only care about scroll or significant content transitions
-        if (eventType != AccessibilityEvent.TYPE_VIEW_SCROLLED &&
-            eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+        if (eventType != AccessibilityEvent.TYPE_VIEW_SCROLLED) {
             return DetectionResult(
                 isReelTransition = false,
-                eventTypeString = typeString,
+                eventTypeString = "EVENT_$eventType",
                 structuralDigest = "class=$className",
-                reason = "Ignored event type"
+                reason = "Not a scroll event"
             )
         }
 
-        // Structural signature: item count, scroll indexes, class type
         val itemCount = event.itemCount
         val fromIndex = event.fromIndex
         val toIndex = event.toIndex
         val structuralDigest = "class=$className;items=$itemCount;idx=$fromIndex-$toIndex"
 
-        // Check if event belongs to a vertical pager or reel viewer
         val isPagerOrScroll = className.contains("ViewPager", ignoreCase = true) ||
-                className.contains("RecyclerView", ignoreCase = true) ||
-                className.contains("TouchImageView", ignoreCase = true) ||
-                eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED
+                className.contains("RecyclerView", ignoreCase = true)
 
         if (!isPagerOrScroll) {
             return DetectionResult(
                 isReelTransition = false,
-                eventTypeString = typeString,
+                eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Not a scrollable container"
+                reason = "Ignored non-feed element"
             )
         }
 

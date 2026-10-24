@@ -39,27 +39,20 @@ class ReelsAccessibilityService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
         if (packageName != TARGET_PACKAGE) return
 
-        val rootNode = try {
-            rootInActiveWindow
-        } catch (e: Exception) {
-            null
-        }
-
-        val result = detector.evaluateEvent(event, rootNode)
+        val result = detector.evaluateEvent(event)
+        if (!result.isReelTransition) return
 
         serviceScope.launch {
             val app = application as? PrivateReelsTrackerApp ?: return@launch
             val repository = app.repository
 
-            if (result.isReelTransition) {
-                repository.incrementReelCount()
-            }
+            repository.incrementReelCount()
 
-            // Record non-sensitive diagnostic entry
+            // Record non-sensitive diagnostic entry only on counted transitions
             repository.recordDiagnostic(
                 eventType = result.eventTypeString,
                 details = "${result.structuralDigest} | ${result.reason}",
-                wasIncremented = result.isReelTransition
+                wasIncremented = true
             )
         }
     }

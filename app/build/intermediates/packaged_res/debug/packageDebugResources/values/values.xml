@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">Strictly counts Reels swipes locally inside Instagram. Never transmits, records, or reads personal messages, keystrokes, or media.</string>
+    <string name="app_name">Reels Tracker</string>
+    <style name="Theme.SecuredReelTracker" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0D0F14</item>
+        <item name="android:navigationBarColor">#0D0F14</item>
+    </style>
+</resources>
