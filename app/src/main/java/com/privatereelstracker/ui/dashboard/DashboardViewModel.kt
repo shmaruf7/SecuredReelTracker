@@ -67,7 +67,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val currentToday = repository.getTodayReels()
             val estimatedReelsMs = ScreenTimeCalculator.calculateEstimatedReelsTime(
                 reelCount = currentToday.reelCount,
-                totalInstagramForegroundMs = igScreenTimeMs
+                totalForegroundMs = igScreenTimeMs
             )
 
             repository.updateScreenTime(igScreenTimeMs, estimatedReelsMs)
