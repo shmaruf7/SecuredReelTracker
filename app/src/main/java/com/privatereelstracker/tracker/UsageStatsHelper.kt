@@ -11,7 +11,13 @@ import com.privatereelstracker.util.DateUtils
 
 object UsageStatsHelper {
 
-    private const val INSTAGRAM_PACKAGE_NAME = "com.instagram.android"
+    val TARGET_PACKAGES = mapOf(
+        "com.instagram.android" to "Instagram",
+        "com.google.android.youtube" to "YouTube",
+        "com.facebook.katana" to "Facebook",
+        "com.zhiliaoapp.musically" to "TikTok",
+        "com.ss.android.ugc.trill" to "TikTok"
+    )
 
     /**
      * Checks whether the user has granted PACKAGE_USAGE_STATS.
@@ -34,10 +40,9 @@ object UsageStatsHelper {
     }
 
     /**
-     * Queries foreground screen time for Instagram today (midnight to now).
-     * Distinguishes total Instagram foreground time from Reels activity.
+     * Queries total foreground screen time for all tracked platforms today (midnight to now).
      */
-    fun getInstagramTodayForegroundTime(context: Context): Long {
+    fun getTotalTrackedForegroundTime(context: Context): Long {
         if (!hasUsagePermission(context)) return 0L
 
         val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
@@ -50,31 +55,41 @@ object UsageStatsHelper {
         val event = UsageEvents.Event()
 
         var totalTimeMs = 0L
-        var lastResumeTimestamp = 0L
+        val activeResumes = mutableMapOf<String, Long>()
 
         while (usageEvents.hasNextEvent()) {
             usageEvents.getNextEvent(event)
-            if (event.packageName == INSTAGRAM_PACKAGE_NAME) {
+            val pkg = event.packageName
+            if (TARGET_PACKAGES.containsKey(pkg)) {
                 when (event.eventType) {
                     UsageEvents.Event.ACTIVITY_RESUMED -> {
-                        lastResumeTimestamp = event.timeStamp
+                        activeResumes[pkg] = event.timeStamp
                     }
                     UsageEvents.Event.ACTIVITY_PAUSED,
                     UsageEvents.Event.ACTIVITY_STOPPED -> {
-                        if (lastResumeTimestamp > 0L) {
-                            totalTimeMs += (event.timeStamp - lastResumeTimestamp)
-                            lastResumeTimestamp = 0L
+                        val resumeTs = activeResumes.remove(pkg)
+                        if (resumeTs != null && resumeTs > 0L) {
+                            totalTimeMs += (event.timeStamp - resumeTs)
                         }
                     }
                 }
             }
         }
 
-        // If currently still in foreground
-        if (lastResumeTimestamp > 0L) {
-            totalTimeMs += (endTime - lastResumeTimestamp)
+        // If any app is currently still in foreground
+        activeResumes.forEach { (_, resumeTs) ->
+            if (resumeTs > 0L) {
+                totalTimeMs += (endTime - resumeTs)
+            }
         }
 
         return totalTimeMs
+    }
+
+    /**
+     * Legacy helper for Instagram-only foreground query.
+     */
+    fun getInstagramTodayForegroundTime(context: Context): Long {
+        return getTotalTrackedForegroundTime(context)
     }
 }

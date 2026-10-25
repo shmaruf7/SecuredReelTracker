@@ -46,15 +46,15 @@ object NotificationHelper {
         )
 
         val title = if (isLockTriggered) {
-            "🛑 Reel Limit Reached ($count Reels)!"
+            "🛑 Limit Reached ($count Videos)!"
         } else {
-            "⚠️ Reels Checkpoint: $count Swipes"
+            "⚠️ Short Video Checkpoint: $count Swipes"
         }
 
         val message = if (isLockTriggered) {
-            "You reached your 100-Reel limit. Instagram has been minimized to protect your time."
+            "You reached your 100 short-form video limit. App has been minimized to protect your time."
         } else {
-            "You've watched $count Reels today. Consider pausing your scrolling."
+            "You've watched $count Reels/Shorts today. Consider taking a break."
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)

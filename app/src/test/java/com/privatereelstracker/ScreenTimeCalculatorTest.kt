@@ -9,13 +9,13 @@ class ScreenTimeCalculatorTest {
     @Test
     fun testEstimatedReelsTimeCalculation() {
         val reelCount = 10
-        val totalIgMs = 300_000L // 5 minutes
-        val averagePerReelMs = 15_000L // 15 seconds
+        val totalMs = 300_000L // 5 minutes
+        val sessionMs = 150_000L // 2.5 minutes
 
         val estimated = ScreenTimeCalculator.calculateEstimatedReelsTime(
             reelCount = reelCount,
-            totalInstagramForegroundMs = totalIgMs,
-            averageReelDurationMs = averagePerReelMs
+            totalForegroundMs = totalMs,
+            sessionDurationMs = sessionMs
         )
 
         assertEquals(150_000L, estimated)
@@ -24,16 +24,16 @@ class ScreenTimeCalculatorTest {
     @Test
     fun testEstimatedReelsTimeCannotExceedTotalForegroundTime() {
         val reelCount = 100
-        val totalIgMs = 60_000L // Only 1 minute of total Instagram foreground time
-        val averagePerReelMs = 15_000L
+        val totalMs = 60_000L // Only 1 minute of total foreground time
+        val sessionMs = 120_000L // 2 minutes session
 
         val estimated = ScreenTimeCalculator.calculateEstimatedReelsTime(
             reelCount = reelCount,
-            totalInstagramForegroundMs = totalIgMs,
-            averageReelDurationMs = averagePerReelMs
+            totalForegroundMs = totalMs,
+            sessionDurationMs = sessionMs
         )
 
-        assertEquals("Estimated reels time must be clamped to total IG foreground time", totalIgMs, estimated)
+        assertEquals("Estimated reels time must be clamped to total foreground time", totalMs, estimated)
     }
 
     @Test

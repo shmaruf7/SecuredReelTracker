@@ -1,10 +1,10 @@
 package com.privatereelstracker.service
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.privatereelstracker.PrivateReelsTrackerApp
+import com.privatereelstracker.tracker.UsageStatsHelper
 import com.privatereelstracker.util.AppPreferences
 import com.privatereelstracker.util.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +14,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Native AccessibilityService configured explicitly for Instagram only.
+ * Native AccessibilityService configured for Instagram, YouTube, Facebook, and TikTok.
  * Runs strictly locally, preserving user privacy.
  */
 class ReelsAccessibilityService : AccessibilityService() {
@@ -24,7 +24,6 @@ class ReelsAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ReelsAccessibility"
-        private const val TARGET_PACKAGE = "com.instagram.android"
         @Volatile var isRunning: Boolean = false
             private set
     }
@@ -39,7 +38,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val packageName = event.packageName?.toString() ?: return
-        if (packageName != TARGET_PACKAGE) return
+        if (!UsageStatsHelper.TARGET_PACKAGES.containsKey(packageName)) return
 
         val result = detector.evaluateEvent(event)
         if (!result.isReelTransition) return
@@ -55,7 +54,7 @@ class ReelsAccessibilityService : AccessibilityService() {
             // Record non-sensitive diagnostic entry
             repository.recordDiagnostic(
                 eventType = result.eventTypeString,
-                details = "${result.structuralDigest} | ${result.reason}",
+                details = "[${result.platform}] ${result.structuralDigest} | ${result.reason}",
                 wasIncremented = true
             )
 
@@ -70,7 +69,7 @@ class ReelsAccessibilityService : AccessibilityService() {
                     isLockTriggered = shouldLock
                 )
 
-                // If lock enabled and at or over 100 reels: dismiss Instagram to Home Screen
+                // If lock enabled and at or over 100 reels: dismiss to Home Screen
                 if (shouldLock) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }

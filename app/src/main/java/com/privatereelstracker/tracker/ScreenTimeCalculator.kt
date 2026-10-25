@@ -9,24 +9,24 @@ object ScreenTimeCalculator {
      * cannot exceed that total time. If user spent 20 seconds swiping 20 reels, each fast swipe
      * is ~2-3 seconds, not a static 18 seconds.
      */
-     fun calculateEstimatedReelsTime(
+    fun calculateEstimatedReelsTime(
         reelCount: Int,
-        totalInstagramForegroundMs: Long,
+        totalForegroundMs: Long,
         sessionDurationMs: Long = 0L
     ): Long {
-        if (reelCount <= 0 || totalInstagramForegroundMs <= 0L) return 0L
+        if (reelCount <= 0 || totalForegroundMs <= 0L) return 0L
 
         // If a specific session duration was recorded, use it
         if (sessionDurationMs > 0L) {
-            return sessionDurationMs.coerceAtMost(totalInstagramForegroundMs)
+            return sessionDurationMs.coerceAtMost(totalForegroundMs)
         }
 
-        // Dynamically estimate: when swiping rapidly (many reels in short IG foreground time),
-        // average time per reel is proportional to total IG time / count.
-        val avgTimePerReel = (totalInstagramForegroundMs / reelCount).coerceIn(2_000L, 25_000L)
+        // Dynamically estimate: when swiping rapidly (many reels in short foreground time),
+        // average time per reel is proportional to total time / count.
+        val avgTimePerReel = (totalForegroundMs / reelCount).coerceIn(2_000L, 25_000L)
         val estimatedTotal = reelCount * avgTimePerReel
 
-        return estimatedTotal.coerceAtMost(totalInstagramForegroundMs)
+        return estimatedTotal.coerceAtMost(totalForegroundMs)
     }
 
     /**

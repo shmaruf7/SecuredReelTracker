@@ -135,12 +135,14 @@ fun SettingsScreen(
                 text = "• 100% Offline: The INTERNET permission is not even requested.\n" +
                         "• All data is stored purely in local Room SQLite storage.\n" +
                         "• No analytics SDKs, trackers, advertising identifiers, or cloud backups.\n" +
-                        "• Accessibility service inspects only Instagram layout events; typed text, captions, video content, and messages are completely ignored.",
+                        "• Accessibility service inspects only short-video swipe transitions (Instagram, YouTube, Facebook, TikTok). Typed text, captions, search queries, video content, and messages are completely ignored.",
                 fontSize = 12.sp,
                 color = TextSecondary,
                 lineHeight = 18.sp
             )
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Reels Control & Limiting
         Text(text = "Reels Limits & Lock", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
@@ -161,14 +163,14 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(
-                        text = "Lock Instagram at 100 Reels",
+                        text = "Lock Apps at 100 Reels/Shorts",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Automatically minimizes Instagram and sends a stop notification once you reach 100 Reels.",
+                        text = "Automatically minimizes Instagram, YouTube, Facebook, or TikTok and alerts you once you reach 100 short videos.",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )

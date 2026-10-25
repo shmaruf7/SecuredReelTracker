@@ -199,7 +199,7 @@ fun DashboardScreen(
 
         // Screen Time Card
         ScreenTimeCard(
-            instagramScreenTimeMs = state.instagramScreenTimeMs,
+            totalScreenTimeMs = state.instagramScreenTimeMs,
             estimatedReelsTimeMs = state.estimatedReelsTimeMs,
             hasUsagePermission = state.isUsageAccessEnabled,
             onGrantPermissionClick = onRequestUsageAccessPermission

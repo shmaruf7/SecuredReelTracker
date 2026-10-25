@@ -29,7 +29,7 @@ import com.privatereelstracker.util.DateUtils
 
 @Composable
 fun ScreenTimeCard(
-    instagramScreenTimeMs: Long,
+    totalScreenTimeMs: Long,
     estimatedReelsTimeMs: Long,
     hasUsagePermission: Boolean,
     onGrantPermissionClick: () -> Unit
@@ -71,12 +71,12 @@ fun ScreenTimeCard(
         ) {
             Column {
                 Text(
-                    text = "Total Instagram",
+                    text = "Tracked Apps",
                     fontSize = 12.sp,
                     color = TextSecondary
                 )
                 Text(
-                    text = if (hasUsagePermission) DateUtils.formatDuration(instagramScreenTimeMs) else "--",
+                    text = if (hasUsagePermission) DateUtils.formatDuration(totalScreenTimeMs) else "--",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -85,7 +85,7 @@ fun ScreenTimeCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Est. Reels Time",
+                    text = "Est. Short-Video Time",
                     fontSize = 12.sp,
                     color = TextSecondary
                 )
@@ -100,7 +100,7 @@ fun ScreenTimeCard(
 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Total foreground time measured via UsageStatsManager; Reels time estimated from swipe frequency.",
+            text = "Total foreground time measured across Instagram, YouTube, Facebook & TikTok; short-video time estimated from swipe frequency.",
             fontSize = 11.sp,
             color = TextMuted,
             lineHeight = 14.sp
