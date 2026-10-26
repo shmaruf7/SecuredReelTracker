@@ -30,9 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.privatereelstracker.ui.theme.AccentGold
 import com.privatereelstracker.ui.theme.AccentPink
-import com.privatereelstracker.ui.theme.AccentTeal
 import com.privatereelstracker.ui.theme.SurfaceBorder
 import com.privatereelstracker.ui.theme.SurfaceCard
 import com.privatereelstracker.ui.theme.TextMuted
@@ -54,8 +52,7 @@ fun AppBreakdownSection(
     facebookLimit: Int,
     tiktokCount: Int,
     tiktokLimit: Int,
-    onUpdateLimit: (String, Int) -> Unit,
-    onTestIncrement: (String) -> Unit
+    onUpdateLimit: (String, Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -79,8 +76,7 @@ fun AppBreakdownSection(
             count = instagramCount,
             limit = instagramLimit,
             brandColor = InstagramColor,
-            onUpdateLimit = { onUpdateLimit("Instagram", it) },
-            onTestIncrement = { onTestIncrement("Instagram") }
+            onUpdateLimit = { onUpdateLimit("Instagram", it) }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -91,8 +87,7 @@ fun AppBreakdownSection(
             count = youtubeCount,
             limit = youtubeLimit,
             brandColor = YouTubeColor,
-            onUpdateLimit = { onUpdateLimit("YouTube", it) },
-            onTestIncrement = { onTestIncrement("YouTube") }
+            onUpdateLimit = { onUpdateLimit("YouTube", it) }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -103,8 +98,7 @@ fun AppBreakdownSection(
             count = facebookCount,
             limit = facebookLimit,
             brandColor = FacebookColor,
-            onUpdateLimit = { onUpdateLimit("Facebook", it) },
-            onTestIncrement = { onTestIncrement("Facebook") }
+            onUpdateLimit = { onUpdateLimit("Facebook", it) }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -115,8 +109,7 @@ fun AppBreakdownSection(
             count = tiktokCount,
             limit = tiktokLimit,
             brandColor = TikTokColor,
-            onUpdateLimit = { onUpdateLimit("TikTok", it) },
-            onTestIncrement = { onTestIncrement("TikTok") }
+            onUpdateLimit = { onUpdateLimit("TikTok", it) }
         )
     }
 }
@@ -128,8 +121,7 @@ private fun AppRowCard(
     count: Int,
     limit: Int,
     brandColor: Color,
-    onUpdateLimit: (Int) -> Unit,
-    onTestIncrement: () -> Unit
+    onUpdateLimit: (Int) -> Unit
 ) {
     val progress = if (limit > 0) (count.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "appProgress")

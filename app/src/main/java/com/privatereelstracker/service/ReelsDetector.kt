@@ -9,7 +9,8 @@ import android.view.accessibility.AccessibilityEvent
  * - Facebook Reels (com.facebook.katana)
  * - TikTok (com.zhiliaoapp.musically & com.ss.android.ugc.trill)
  *
- * Strictly ignores regular feed browsing while ensuring reliable swipe detection for YouTube Shorts & Facebook Reels.
+ * Guarantees exactly 1 count per swipe (1500ms window), ignores window-switch/app-resume events,
+ * and strictly filters out messaging, regular feed browsing, and long YouTube videos.
  */
 class ReelsDetector {
 
@@ -21,8 +22,11 @@ class ReelsDetector {
         val platform: String = "Unknown"
     )
 
-    // Per-platform debouncers (800ms window) to prevent double counting without missing swipes
+    // Per-platform debouncers (1500ms gesture window)
     private val filtersByPlatform = mutableMapOf<String, DuplicateFilter>()
+
+    // Track last swipe timestamp per package
+    private val lastSwipeTimeByPackage = mutableMapOf<String, Long>()
 
     // Track last observed index for platforms with explicit index incrementing (like Instagram)
     private val lastIndexByPackage = mutableMapOf<String, Int>()
@@ -32,12 +36,26 @@ class ReelsDetector {
         val packageName = event.packageName?.toString() ?: ""
         val className = event.className?.toString() ?: ""
 
-        if (eventType != AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+        // NEVER count TYPE_WINDOW_STATE_CHANGED as a Reel swipe (prevents +2 counts on app switch/resume)
+        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            return DetectionResult(
+                isReelTransition = false,
+                eventTypeString = "TYPE_WINDOW_STATE_CHANGED",
+                structuralDigest = "pkg=$packageName;class=$className",
+                reason = "Ignored: Window state change / App switch",
+                platform = packageName
+            )
+        }
+
+        val isSwipeEvent = eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED ||
+                eventType == AccessibilityEvent.TYPE_VIEW_SELECTED
+
+        if (!isSwipeEvent) {
             return DetectionResult(
                 isReelTransition = false,
                 eventTypeString = "EVENT_$eventType",
                 structuralDigest = "pkg=$packageName;class=$className",
-                reason = "Not a scroll event",
+                reason = "Not a scroll/selected gesture event",
                 platform = packageName
             )
         }
@@ -59,59 +77,77 @@ class ReelsDetector {
         if (platformName == "Unknown") {
             return DetectionResult(
                 isReelTransition = false,
-                eventTypeString = "TYPE_VIEW_SCROLLED",
+                eventTypeString = "TYPE_$eventType",
                 structuralDigest = structuralDigest,
                 reason = "Untracked package $packageName",
                 platform = "Unknown"
             )
         }
 
-        // Broad structural match to support view variations across app versions
-        val isShortFormContainer = when (platformName) {
-            "Instagram" -> {
-                className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("RecyclerView", ignoreCase = true) ||
-                        className.contains("Reel", ignoreCase = true)
-            }
-            "YouTube" -> {
-                className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("Shorts", ignoreCase = true) ||
-                        className.contains("Reel", ignoreCase = true) ||
-                        className.contains("RecyclerView", ignoreCase = true) ||
-                        className.contains("SwipeToDismiss", ignoreCase = true) ||
-                        className.contains("ViewGroup", ignoreCase = true) ||
-                        className.contains("FrameLayout", ignoreCase = true)
-            }
-            "Facebook" -> {
-                className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("Reel", ignoreCase = true) ||
-                        className.contains("Litho", ignoreCase = true) ||
-                        className.contains("RecyclerView", ignoreCase = true) ||
-                        className.contains("ViewGroup", ignoreCase = true) ||
-                        className.contains("FrameLayout", ignoreCase = true)
-            }
-            "TikTok" -> {
-                className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("RecyclerView", ignoreCase = true) ||
-                        className.contains("ViewGroup", ignoreCase = true) ||
-                        className.contains("FrameLayout", ignoreCase = true)
-            }
-            else -> false
-        }
+        // 1. FILTER OUT MESSAGING & CHATS (Instagram Direct, Facebook Messenger, etc.)
+        val isMessaging = className.contains("Message", ignoreCase = true) ||
+                className.contains("Chat", ignoreCase = true) ||
+                className.contains("Direct", ignoreCase = true) ||
+                className.contains("Thread", ignoreCase = true) ||
+                className.contains("Composer", ignoreCase = true) ||
+                className.contains("Inbox", ignoreCase = true)
 
-        if (!isShortFormContainer) {
+        if (isMessaging) {
             return DetectionResult(
                 isReelTransition = false,
-                eventTypeString = "TYPE_VIEW_SCROLLED",
+                eventTypeString = "TYPE_$eventType",
                 structuralDigest = structuralDigest,
-                reason = "Ignored non-container scroll: $className",
+                reason = "Ignored: Messaging / Chat interaction",
                 platform = platformName
             )
         }
 
-        // Get or create per-platform duplicate filter
-        val filter = filtersByPlatform.getOrPut(platformName) {
-            DuplicateFilter(debounceWindowMs = 800L)
+        // 2. FILTER OUT YOUTUBE LONG VIDEOS & HOME/SEARCH FEED
+        if (platformName == "YouTube") {
+            val isLongVideoOrSearch = className.contains("Watch", ignoreCase = true) ||
+                    className.contains("Search", ignoreCase = true) ||
+                    className.contains("Feed", ignoreCase = true) ||
+                    (itemCount > 2 && fromIndex > 0 && fromIndex != toIndex)
+
+            if (isLongVideoOrSearch) {
+                return DetectionResult(
+                    isReelTransition = false,
+                    eventTypeString = "TYPE_$eventType",
+                    structuralDigest = structuralDigest,
+                    reason = "Ignored: YouTube Regular Video / Search Feed",
+                    platform = "YouTube"
+                )
+            }
+        }
+
+        // 3. FILTER OUT REGULAR FACEBOOK NEWSFEED
+        if (platformName == "Facebook") {
+            val isRegularFeed = className.contains("NewsFeed", ignoreCase = true) ||
+                    className.contains("FeedRecyclerView", ignoreCase = true) ||
+                    (itemCount > 3 && fromIndex > 0 && fromIndex != toIndex)
+
+            if (isRegularFeed) {
+                return DetectionResult(
+                    isReelTransition = false,
+                    eventTypeString = "TYPE_$eventType",
+                    structuralDigest = structuralDigest,
+                    reason = "Ignored: Facebook Newsfeed Scroll",
+                    platform = "Facebook"
+                )
+            }
+        }
+
+        // 4. PREVENT MULTI-COUNTING PER SWIPE GESTURE (1500ms Gesture Window)
+        val now = System.currentTimeMillis()
+        val lastSwipeTime = lastSwipeTimeByPackage[platformName] ?: 0L
+        if (now - lastSwipeTime < 1500L) {
+            return DetectionResult(
+                isReelTransition = false,
+                eventTypeString = "TYPE_$eventType",
+                structuralDigest = structuralDigest,
+                reason = "Debounced: Same swipe gesture within 1.5s window",
+                platform = platformName
+            )
         }
 
         // For Instagram, check if explicit index changed
@@ -128,17 +164,21 @@ class ReelsDetector {
             )
         }
 
-        // Debounce swipe events per platform (800ms gesture window)
-        val now = System.currentTimeMillis()
+        // Get or create per-platform duplicate filter (1500ms gesture window)
+        val filter = filtersByPlatform.getOrPut(platformName) {
+            DuplicateFilter(debounceWindowMs = 1500L)
+        }
+
         val shouldCount = filter.shouldCount(now = now, contentDigest = "${platformName}_scroll")
 
         return if (shouldCount) {
+            lastSwipeTimeByPackage[platformName] = now
             if (currentIndex >= 0) {
                 lastIndexByPackage[platformName] = currentIndex
             }
             DetectionResult(
                 isReelTransition = true,
-                eventTypeString = "TYPE_VIEW_SCROLLED",
+                eventTypeString = "TYPE_$eventType",
                 structuralDigest = structuralDigest,
                 reason = "Valid $platformName short-video swipe transition",
                 platform = platformName
@@ -146,9 +186,9 @@ class ReelsDetector {
         } else {
             DetectionResult(
                 isReelTransition = false,
-                eventTypeString = "TYPE_VIEW_SCROLLED",
+                eventTypeString = "TYPE_$eventType",
                 structuralDigest = structuralDigest,
-                reason = "Debounced within 800ms swipe window",
+                reason = "Debounced within 1.5s swipe window",
                 platform = platformName
             )
         }

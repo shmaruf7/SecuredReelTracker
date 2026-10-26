@@ -207,8 +207,7 @@ fun DashboardScreen(
             facebookLimit = state.facebookLimit,
             tiktokCount = state.tiktokCount,
             tiktokLimit = state.tiktokLimit,
-            onUpdateLimit = { platform, limit -> viewModel.updateAppLimit(platform, limit) },
-            onTestIncrement = { platform -> viewModel.triggerManualTestIncrement(platform) }
+            onUpdateLimit = { platform, limit -> viewModel.updateAppLimit(platform, limit) }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
