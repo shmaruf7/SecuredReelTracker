@@ -47,30 +47,45 @@ class ReelsAccessibilityService : AccessibilityService() {
             val app = application as? PrivateReelsTrackerApp ?: return@launch
             val repository = app.repository
 
-            repository.incrementReelCount()
+            val platform = result.platform
+            repository.incrementReelCount(platform = platform)
             val todayData = repository.getTodayReels()
-            val currentCount = todayData.reelCount
+
+            val appCount = when (platform) {
+                "Instagram" -> todayData.instagramReelsCount
+                "YouTube" -> todayData.youtubeShortsCount
+                "Facebook" -> todayData.facebookReelsCount
+                "TikTok" -> todayData.tiktokReelsCount
+                else -> todayData.reelCount
+            }
 
             // Record non-sensitive diagnostic entry
             repository.recordDiagnostic(
                 eventType = result.eventTypeString,
-                details = "[${result.platform}] ${result.structuralDigest} | ${result.reason}",
+                details = "[$platform] ${result.structuralDigest} | ${result.reason}",
                 wasIncremented = true
             )
 
-            // Check milestone notifications: 20, 50, 70, 90, 100, 110, 120, 130, 140, 150
-            if (NotificationHelper.MILESTONES.contains(currentCount)) {
-                val isLockEnabled = AppPreferences.isLockEnabled(this@ReelsAccessibilityService)
-                val shouldLock = isLockEnabled && currentCount >= 100
+            val context = this@ReelsAccessibilityService
+            val appLimit = AppPreferences.getAppLimit(context, platform)
+            val notifFreq = AppPreferences.getNotificationFrequency(context)
+            val isAutoBlock = AppPreferences.isAutoBlockEnabled(context)
 
-                NotificationHelper.sendMilestoneNotification(
-                    context = this@ReelsAccessibilityService,
-                    count = currentCount,
-                    isLockTriggered = shouldLock
+            val isLimitReached = appCount >= appLimit || todayData.reelCount >= 100
+            val isMilestone = appCount > 0 && (appCount % notifFreq == 0 || appCount == appLimit / 2)
+
+            if (isLimitReached || isMilestone) {
+                val shouldBlock = isAutoBlock && isLimitReached
+
+                NotificationHelper.sendAppLimitNotification(
+                    context = context,
+                    platform = platform,
+                    appCount = appCount,
+                    appLimit = appLimit,
+                    isBlocked = shouldBlock
                 )
 
-                // If lock enabled and at or over 100 reels: dismiss to Home Screen
-                if (shouldLock) {
+                if (shouldBlock) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }
             }

@@ -28,6 +28,18 @@ interface ReelDao {
     @Query("UPDATE daily_reel_counts SET reelCount = reelCount + 1, lastUpdatedTimestamp = :now WHERE dateString = :date")
     suspend fun incrementReelCount(date: String, now: Long = System.currentTimeMillis()): Int
 
+    @Query("UPDATE daily_reel_counts SET reelCount = reelCount + 1, instagramReelsCount = instagramReelsCount + 1, lastUpdatedTimestamp = :now WHERE dateString = :date")
+    suspend fun incrementInstagramReelsCount(date: String, now: Long = System.currentTimeMillis()): Int
+
+    @Query("UPDATE daily_reel_counts SET reelCount = reelCount + 1, youtubeShortsCount = youtubeShortsCount + 1, lastUpdatedTimestamp = :now WHERE dateString = :date")
+    suspend fun incrementYouTubeShortsCount(date: String, now: Long = System.currentTimeMillis()): Int
+
+    @Query("UPDATE daily_reel_counts SET reelCount = reelCount + 1, facebookReelsCount = facebookReelsCount + 1, lastUpdatedTimestamp = :now WHERE dateString = :date")
+    suspend fun incrementFacebookReelsCount(date: String, now: Long = System.currentTimeMillis()): Int
+
+    @Query("UPDATE daily_reel_counts SET reelCount = reelCount + 1, tiktokReelsCount = tiktokReelsCount + 1, lastUpdatedTimestamp = :now WHERE dateString = :date")
+    suspend fun incrementTikTokReelsCount(date: String, now: Long = System.currentTimeMillis()): Int
+
     @Query("UPDATE daily_reel_counts SET instagramScreenTimeMs = :screenTimeMs, estimatedReelsTimeMs = :estimatedReelsMs WHERE dateString = :date")
     suspend fun updateScreenTime(date: String, screenTimeMs: Long, estimatedReelsMs: Long)
 

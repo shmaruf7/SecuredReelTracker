@@ -11,7 +11,7 @@ import com.privatereelstracker.data.local.entity.DiagnosticLog
 
 @Database(
     entities = [DailyReelCount::class, DiagnosticLog::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -28,7 +28,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "secured_reels_tracker.db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

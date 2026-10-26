@@ -1,32 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Reel clapperboard / film frame outline -->
+
+    <!-- Film Frame Border with Neon Cyan Stroke -->
     <path
-        android:strokeColor="#6C5CE7"
         android:strokeWidth="4"
+        android:strokeColor="#00F2FE"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 32,26 L 76,26 A 6,6 0 0,1 82,32 L 82,76 A 6,6 0 0,1 76,82 L 32,82 A 6,6 0 0,1 26,76 L 26,32 A 6,6 0 0,1 32,26 Z" />
-    <!-- Clapper stripes on top -->
+        android:pathData="M 30,24 L 78,24 A 8,8 0 0,1 86,32 L 86,76 A 8,8 0 0,1 78,84 L 30,84 A 8,8 0 0,1 22,76 L 22,32 A 8,8 0 0,1 30,24 Z" />
+
+    <!-- Clapper Stripes -->
     <path
-        android:strokeColor="#00D2D3"
         android:strokeWidth="3.5"
+        android:strokeColor="#FF007A"
         android:strokeLineCap="round"
-        android:pathData="M 36,26 L 46,38 M 52,26 L 62,38 M 68,26 L 78,38" />
+        android:pathData="M 32,24 L 42,36 M 48,24 L 58,36 M 64,24 L 74,36" />
+
     <path
-        android:strokeColor="#6C5CE7"
         android:strokeWidth="3"
-        android:pathData="M 26,38 L 82,38" />
-    <!-- Shield / lock emblem in center signifying Privacy -->
+        android:strokeColor="#00F2FE"
+        android:pathData="M 22,36 L 86,36" />
+
+    <!-- Central Shield Emblem -->
     <path
-        android:fillColor="#00D2D3"
-        android:pathData="M 54,46 C 45,46 42,50 42,58 C 42,68 54,73 54,73 C 54,73 66,68 66,58 C 66,50 63,46 54,46 Z" />
-    <!-- Lock keyhole cut -->
+        android:pathData="M 54,44 C 44,44 40,48 40,58 C 40,69 54,75 54,75 C 54,75 68,69 68,58 C 68,48 64,44 54,44 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startColor="#00F2FE"
+                android:endColor="#4FACFE"
+                android:type="linear"
+                android:startX="40"
+                android:startY="44"
+                android:endX="68"
+                android:endY="75" />
+        </aapt:attr>
+    </path>
+
+    <!-- Play/Lock Icon inside Shield -->
     <path
-        android:fillColor="#0B0D13"
-        android:pathData="M 54,54 A 3,3 0 0,0 52,58.8 L 52,64 L 56,64 L 56,58.8 A 3,3 0 0,0 54,54 Z" />
+        android:fillColor="#0D111A"
+        android:pathData="M 50,52 L 61,58 L 50,64 Z" />
+
 </vector>

@@ -23,7 +23,9 @@ data class SettingsUiState(
     val isExporting: Boolean = false,
     val exportMessage: String? = null,
     val isDataWiped: Boolean = false,
-    val isLockAt100Enabled: Boolean = false
+    val isLockAt100Enabled: Boolean = false,
+    val isAutoBlockEnabled: Boolean = false,
+    val notificationFrequency: Int = 10
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -32,7 +34,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _uiState = MutableStateFlow(
         SettingsUiState(
-            isLockAt100Enabled = com.privatereelstracker.util.AppPreferences.isLockEnabled(application)
+            isLockAt100Enabled = com.privatereelstracker.util.AppPreferences.isLockEnabled(application),
+            isAutoBlockEnabled = com.privatereelstracker.util.AppPreferences.isAutoBlockEnabled(application),
+            notificationFrequency = com.privatereelstracker.util.AppPreferences.getNotificationFrequency(application)
         )
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -40,7 +44,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleLockAt100(enabled: Boolean) {
         val context = getApplication<Application>()
         com.privatereelstracker.util.AppPreferences.setLockEnabled(context, enabled)
-        _uiState.value = _uiState.value.copy(isLockAt100Enabled = enabled)
+        com.privatereelstracker.util.AppPreferences.setAutoBlockEnabled(context, enabled)
+        _uiState.value = _uiState.value.copy(
+            isLockAt100Enabled = enabled,
+            isAutoBlockEnabled = enabled
+        )
+    }
+
+    fun setNotificationFrequency(frequency: Int) {
+        val context = getApplication<Application>()
+        com.privatereelstracker.util.AppPreferences.setNotificationFrequency(context, frequency)
+        _uiState.value = _uiState.value.copy(notificationFrequency = frequency)
     }
 
     fun exportLocalData(onFileReady: (Uri) -> Unit) {

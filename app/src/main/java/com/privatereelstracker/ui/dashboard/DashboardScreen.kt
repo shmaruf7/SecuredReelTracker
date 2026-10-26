@@ -179,10 +179,10 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // Large Center Goal Ring
-        DailyGoalRing(
+        // Large Center Limit Ring
+        com.privatereelstracker.ui.dashboard.components.DailyLimitRing(
             currentCount = state.todayReels,
-            goal = state.dailyGoal
+            maxLimit = state.dailyGoal
         )
 
         if (state.isGoalExceeded) {
@@ -196,6 +196,22 @@ fun DashboardScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // App-wise Reels & Shorts Breakdown
+        com.privatereelstracker.ui.dashboard.components.AppBreakdownSection(
+            instagramCount = state.instagramCount,
+            instagramLimit = state.instagramLimit,
+            youtubeCount = state.youtubeCount,
+            youtubeLimit = state.youtubeLimit,
+            facebookCount = state.facebookCount,
+            facebookLimit = state.facebookLimit,
+            tiktokCount = state.tiktokCount,
+            tiktokLimit = state.tiktokLimit,
+            onUpdateLimit = { platform, limit -> viewModel.updateAppLimit(platform, limit) },
+            onTestIncrement = { platform -> viewModel.triggerManualTestIncrement(platform) }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Screen Time Card
         ScreenTimeCard(
@@ -218,13 +234,13 @@ fun DashboardScreen(
 
         // Manual Test Simulator Button
         OutlinedButton(
-            onClick = { viewModel.triggerManualTestIncrement() },
+            onClick = { viewModel.triggerManualTestIncrement("Instagram") },
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = AccentTeal)
             Text(
-                text = " Test Simulated Reel Swipe (+1)",
+                text = " Test Simulated Instagram Reel Swipe (+1)",
                 color = AccentTeal,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium

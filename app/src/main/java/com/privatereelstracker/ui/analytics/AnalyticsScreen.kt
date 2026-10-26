@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.privatereelstracker.ui.analytics.components.SevenDayBarChart
 import com.privatereelstracker.ui.theme.AccentGold
+import com.privatereelstracker.ui.theme.AccentPink
 import com.privatereelstracker.ui.theme.AccentTeal
 import com.privatereelstracker.ui.theme.DarkBackground
 import com.privatereelstracker.ui.theme.PrimaryNeon
@@ -172,7 +173,7 @@ fun AnalyticsScreen(
                     text = "${day.reelCount} Reels",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (day.reelCount > day.dailyGoal) AccentGold else AccentTeal
+                    color = if (day.reelCount > day.dailyGoal) AccentPink else AccentTeal
                 )
             }
         }

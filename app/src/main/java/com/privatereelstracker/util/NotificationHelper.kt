@@ -33,6 +33,22 @@ object NotificationHelper {
     }
 
     fun sendMilestoneNotification(context: Context, count: Int, isLockTriggered: Boolean) {
+        sendAppLimitNotification(
+            context = context,
+            platform = "Global",
+            appCount = count,
+            appLimit = 100,
+            isBlocked = isLockTriggered
+        )
+    }
+
+    fun sendAppLimitNotification(
+        context: Context,
+        platform: String,
+        appCount: Int,
+        appLimit: Int,
+        isBlocked: Boolean
+    ) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -45,20 +61,22 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (isLockTriggered) {
-            "🛑 Limit Reached ($count Videos)!"
+        val title = if (isBlocked) {
+            "🛑 $platform Limit Reached ($appCount/$appLimit)!"
         } else {
-            "⚠️ Short Video Checkpoint: $count Swipes"
+            "⚠️ $platform Milestone: $appCount Videos"
         }
 
-        val message = if (isLockTriggered) {
-            "You reached your 100 short-form video limit. App has been minimized to protect your time."
+        val message = if (isBlocked) {
+            "You reached your daily limit of $appLimit videos on $platform. The app was minimized to protect your focus."
         } else {
-            "You've watched $count Reels/Shorts today. Consider taking a break."
+            "You've watched $appCount $platform short videos today (Limit: $appLimit). Take a mindful break!"
         }
+
+        val notificationId = (platform.hashCode() and 0xFFFF) + appCount
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(com.privatereelstracker.R.drawable.ic_notification_logo)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
@@ -67,6 +85,6 @@ object NotificationHelper {
             .setContentIntent(pendingIntent)
             .build()
 
-        manager.notify(count, notification)
+        manager.notify(notificationId, notification)
     }
 }

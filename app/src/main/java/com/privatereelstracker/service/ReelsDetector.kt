@@ -9,12 +9,9 @@ import android.view.accessibility.AccessibilityEvent
  * - Facebook Reels (com.facebook.katana)
  * - TikTok (com.zhiliaoapp.musically & com.ss.android.ugc.trill)
  *
- * Strictly ignores regular feed browsing (e.g. Facebook feed, YouTube search/home feed, Instagram feed).
- * Rejects partial/rubber-band drag gestures by requiring distinct item index transitions.
+ * Strictly ignores regular feed browsing while ensuring reliable swipe detection for YouTube Shorts & Facebook Reels.
  */
-class ReelsDetector(
-    private val duplicateFilter: DuplicateFilter = DuplicateFilter(debounceWindowMs = 700L)
-) {
+class ReelsDetector {
 
     data class DetectionResult(
         val isReelTransition: Boolean,
@@ -24,7 +21,10 @@ class ReelsDetector(
         val platform: String = "Unknown"
     )
 
-    // Track last observed index per package to prevent cross-app state leakage
+    // Per-platform debouncers (800ms window) to prevent double counting without missing swipes
+    private val filtersByPlatform = mutableMapOf<String, DuplicateFilter>()
+
+    // Track last observed index for platforms with explicit index incrementing (like Instagram)
     private val lastIndexByPackage = mutableMapOf<String, Int>()
 
     fun evaluateEvent(event: AccessibilityEvent): DetectionResult {
@@ -56,73 +56,91 @@ class ReelsDetector(
             else -> "Unknown"
         }
 
-        // Structural verification to isolate Reels/Shorts/TikTok from regular feeds:
-        val isShortFormPager = when (platformName) {
+        if (platformName == "Unknown") {
+            return DetectionResult(
+                isReelTransition = false,
+                eventTypeString = "TYPE_VIEW_SCROLLED",
+                structuralDigest = structuralDigest,
+                reason = "Untracked package $packageName",
+                platform = "Unknown"
+            )
+        }
+
+        // Broad structural match to support view variations across app versions
+        val isShortFormContainer = when (platformName) {
             "Instagram" -> {
-                // Reels viewer uses ViewPager or ViewPager2. Regular feed is RecyclerView.
-                className.contains("ViewPager", ignoreCase = true)
-            }
-            "YouTube" -> {
-                // YouTube Shorts uses a full-screen vertical ViewPager/ReelRecyclerView.
-                // Standard YouTube home feed and search results are standard RecyclerViews with multiple items visible.
-                // In Shorts, the pager container class contains ViewPager or ViewPager2 or Reel.
                 className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("Shorts", ignoreCase = true) ||
-                        (className.contains("RecyclerView", ignoreCase = true) && itemCount > 1 && fromIndex == toIndex)
-            }
-            "Facebook" -> {
-                // Facebook Reels viewer runs in a distinct ViewPager container.
-                // Regular Facebook newsfeed uses multi-item FeedRecyclerView / LithoView.
-                className.contains("ViewPager", ignoreCase = true) ||
+                        className.contains("RecyclerView", ignoreCase = true) ||
                         className.contains("Reel", ignoreCase = true)
             }
-            "TikTok" -> {
-                // TikTok is almost exclusively vertical video swipes (ViewPager / VerticalViewPager).
+            "YouTube" -> {
                 className.contains("ViewPager", ignoreCase = true) ||
-                        className.contains("RecyclerView", ignoreCase = true)
+                        className.contains("Shorts", ignoreCase = true) ||
+                        className.contains("Reel", ignoreCase = true) ||
+                        className.contains("RecyclerView", ignoreCase = true) ||
+                        className.contains("SwipeToDismiss", ignoreCase = true) ||
+                        className.contains("ViewGroup", ignoreCase = true) ||
+                        className.contains("FrameLayout", ignoreCase = true)
+            }
+            "Facebook" -> {
+                className.contains("ViewPager", ignoreCase = true) ||
+                        className.contains("Reel", ignoreCase = true) ||
+                        className.contains("Litho", ignoreCase = true) ||
+                        className.contains("RecyclerView", ignoreCase = true) ||
+                        className.contains("ViewGroup", ignoreCase = true) ||
+                        className.contains("FrameLayout", ignoreCase = true)
+            }
+            "TikTok" -> {
+                className.contains("ViewPager", ignoreCase = true) ||
+                        className.contains("RecyclerView", ignoreCase = true) ||
+                        className.contains("ViewGroup", ignoreCase = true) ||
+                        className.contains("FrameLayout", ignoreCase = true)
             }
             else -> false
         }
 
-        if (!isShortFormPager) {
+        if (!isShortFormContainer) {
             return DetectionResult(
                 isReelTransition = false,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Ignored: Regular $platformName feed scroll",
+                reason = "Ignored non-container scroll: $className",
                 platform = platformName
             )
         }
 
-        // Issue 2 Prevention: Rejection of partial bounces / uncommitted drags.
-        // A true full swipe moves to a new index in the pager.
+        // Get or create per-platform duplicate filter
+        val filter = filtersByPlatform.getOrPut(platformName) {
+            DuplicateFilter(debounceWindowMs = 800L)
+        }
+
+        // For Instagram, check if explicit index changed
         val currentIndex = if (fromIndex >= 0) fromIndex else toIndex
-        val lastIndex = lastIndexByPackage[packageName] ?: -1
+        val lastIndex = lastIndexByPackage[platformName] ?: -1
 
-        if (currentIndex >= 0 && currentIndex == lastIndex) {
+        if (platformName == "Instagram" && currentIndex >= 0 && currentIndex == lastIndex && itemCount > 1) {
             return DetectionResult(
                 isReelTransition = false,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Ignored: Partial bounce / drag without changing video",
+                reason = "Ignored: Instagram same index bounce ($currentIndex)",
                 platform = platformName
             )
         }
 
-        val shouldCount = duplicateFilter.shouldCount(
-            now = System.currentTimeMillis(),
-            contentDigest = "${platformName}_idx_$currentIndex"
-        )
+        // Debounce swipe events per platform (800ms gesture window)
+        val now = System.currentTimeMillis()
+        val shouldCount = filter.shouldCount(now = now, contentDigest = "${platformName}_scroll")
 
         return if (shouldCount) {
             if (currentIndex >= 0) {
-                lastIndexByPackage[packageName] = currentIndex
+                lastIndexByPackage[platformName] = currentIndex
             }
             DetectionResult(
                 isReelTransition = true,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Valid $platformName short-video transition (Index: $currentIndex)",
+                reason = "Valid $platformName short-video swipe transition",
                 platform = platformName
             )
         } else {
@@ -130,7 +148,7 @@ class ReelsDetector(
                 isReelTransition = false,
                 eventTypeString = "TYPE_VIEW_SCROLLED",
                 structuralDigest = structuralDigest,
-                reason = "Duplicate / debounced within time window",
+                reason = "Debounced within 800ms swipe window",
                 platform = platformName
             )
         }

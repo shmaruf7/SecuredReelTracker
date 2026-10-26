@@ -145,7 +145,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Reels Control & Limiting
-        Text(text = "Reels Limits & Lock", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(text = "Auto-Block & Notification Preferences", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
         Spacer(modifier = Modifier.height(10.dp))
 
         Column(
@@ -163,22 +163,59 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(
-                        text = "Lock Apps at 100 Reels/Shorts",
+                        text = "Auto-Block App on Reaching Limit",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Automatically minimizes Instagram, YouTube, Facebook, or TikTok and alerts you once you reach 100 short videos.",
+                        text = "Automatically minimizes Instagram, YouTube, Facebook, or TikTok to the Home screen once your app limit is reached.",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
                 }
                 androidx.compose.material3.Switch(
-                    checked = state.isLockAt100Enabled,
+                    checked = state.isAutoBlockEnabled,
                     onCheckedChange = { viewModel.toggleLockAt100(it) }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Notification Checkpoint Interval",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Notify me every N short videos viewed today:",
+                fontSize = 12.sp,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(5, 10, 15, 20, 25).forEach { freq ->
+                    val isSelected = state.notificationFrequency == freq
+                    androidx.compose.material3.FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setNotificationFrequency(freq) },
+                        label = { Text("$freq", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AccentTeal,
+                            selectedLabelColor = DarkBackground,
+                            containerColor = SurfaceBorder,
+                            labelColor = TextPrimary
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 

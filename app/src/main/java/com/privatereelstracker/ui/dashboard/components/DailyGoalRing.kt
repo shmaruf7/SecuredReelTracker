@@ -26,20 +26,20 @@ import com.privatereelstracker.ui.theme.TextMuted
 import com.privatereelstracker.ui.theme.TextPrimary
 
 @Composable
-fun DailyGoalRing(
+fun DailyLimitRing(
     currentCount: Int,
-    goal: Int,
+    maxLimit: Int,
     size: Dp = 190.dp,
     strokeWidth: Dp = 14.dp
 ) {
-    val progress = if (goal > 0) (currentCount.toFloat() / goal.toFloat()).coerceIn(0f, 1.25f) else 0f
+    val progress = if (maxLimit > 0) (currentCount.toFloat() / maxLimit.toFloat()).coerceIn(0f, 1.25f) else 0f
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 800),
-        label = "GoalRingProgress"
+        label = "LimitRingProgress"
     )
 
-    val gradientColors = if (currentCount > goal) {
+    val gradientColors = if (currentCount > maxLimit) {
         listOf(AccentPink, PrimaryNeon)
     } else {
         listOf(AccentTeal, PrimaryNeon)
@@ -75,10 +75,21 @@ fun DailyGoalRing(
                 color = TextPrimary
             )
             Text(
-                text = "of $goal goal",
+                text = "of $maxLimit max limit",
                 fontSize = 13.sp,
                 color = TextMuted
             )
         }
     }
+}
+
+@Deprecated("Renamed to DailyLimitRing", ReplaceWith("DailyLimitRing(currentCount, goal, size, strokeWidth)"))
+@Composable
+fun DailyGoalRing(
+    currentCount: Int,
+    goal: Int,
+    size: Dp = 190.dp,
+    strokeWidth: Dp = 14.dp
+) {
+    DailyLimitRing(currentCount = currentCount, maxLimit = goal, size = size, strokeWidth = strokeWidth)
 }

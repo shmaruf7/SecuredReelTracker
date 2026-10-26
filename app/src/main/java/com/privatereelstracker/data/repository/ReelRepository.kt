@@ -33,14 +33,24 @@ class ReelRepository(
         return reelDao.getRecentDaysFlow(limit)
     }
 
-    suspend fun incrementReelCount(now: Long = System.currentTimeMillis()) {
+    suspend fun incrementReelCount(platform: String = "Instagram", now: Long = System.currentTimeMillis()) {
         val today = DateUtils.getTodayString()
-        val updatedRows = reelDao.incrementReelCount(today, now)
+        val updatedRows = when (platform) {
+            "Instagram" -> reelDao.incrementInstagramReelsCount(today, now)
+            "YouTube" -> reelDao.incrementYouTubeShortsCount(today, now)
+            "Facebook" -> reelDao.incrementFacebookReelsCount(today, now)
+            "TikTok" -> reelDao.incrementTikTokReelsCount(today, now)
+            else -> reelDao.incrementReelCount(today, now)
+        }
         if (updatedRows == 0) {
             // First reel of today
             val newEntry = DailyReelCount(
                 dateString = today,
                 reelCount = 1,
+                instagramReelsCount = if (platform == "Instagram") 1 else 0,
+                youtubeShortsCount = if (platform == "YouTube") 1 else 0,
+                facebookReelsCount = if (platform == "Facebook") 1 else 0,
+                tiktokReelsCount = if (platform == "TikTok") 1 else 0,
                 lastUpdatedTimestamp = now
             )
             reelDao.insertOrUpdate(newEntry)
